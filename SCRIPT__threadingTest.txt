@@ -1,0 +1,39 @@
+// thread function test
+//
+// script name required: "threadingTest"
+// Trigger required: "Interval" (1s)
+// Options required: Synchronous
+
+require(JD_HOME + "/eventscripter/required/funcs/system.js");
+require(JD_HOME + "/eventscripter/required/cfg/EventScripterExtension.js");
+
+var scriptName = "threadingTest";
+var scriptInterval = interval;
+var scriptEnabled = true;
+
+alert("starting");
+
+function scriptFunction() {
+    alert("running");
+    if (scriptEnabled) {
+        thread(scriptFunction, scriptInterval);
+    }
+}
+thread(scriptFunction);
+
+alert("blocking");
+
+// block main thread
+var script;
+while (scriptEnabled) {
+    script = EventScripterExtension.getScriptByName(scriptName);
+    // sometimes the json file for the scripts cant be found
+    // thats when JD is save the new script settings to the json file
+    if (script) {
+        scriptInterval = script.eventTriggerSettings.interval;
+        scriptEnabled = script.enabled;
+    }
+    sleep(100);
+}
+
+alert("ending");

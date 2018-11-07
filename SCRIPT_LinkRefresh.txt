@@ -1,0 +1,55 @@
+// LinkRefresh
+// Just a download list manager
+//
+// Trigger Required: "Interval"
+// Options recommended: Synchronous
+
+require(JD_HOME + "/eventscripter/LinkRefresh.js");
+
+var kb = 1024;
+var mb = 1024 * 1024;
+var seconds = 1000;
+var minutes = 60 * seconds;
+
+LinkRefresh({
+
+    scriptInterval: 5 * seconds,
+
+    minDownloadsRunning: 10, // used to handle simultane running downloads
+    maxDownloadsRunning: 15, // used to handle simultane running downloads
+
+    minDownloadSpeed: 0.8 * mb,
+    maxDownloadSpeed: 1.3 * mb,
+
+    handleSimultaneCount: true, // if(speed<minDownloadSpeed){maxDownloadsRunning} elseif(speed>maxDownloadSpeed){minDownloadsRunning}
+    abortCaptchaOnMaxSpeed: false,
+
+    resetUnfinished: true,
+    resetUnfinishedSize: 5 * mb, // reset resumeable unfinished files only when done size <= ...
+
+    resumeOnErrorStatus: true,
+    resumeOnErrorStatusTypes: { // available statustypes: libs/getLinkStatus.data.js (attention: not all statustypes available by eventscipter yet)
+        "errorPluginDefect": 10, // sometimes because of a proxy response
+        "errorFileNotFound": 5, // sometimes a proxy sends 404
+    },
+
+    resumeSkipped: true, // like skipped captcha
+    resumeSkippedAfter: 5 * minutes, // resume after ...
+
+    abortSlow: true,
+    abortSlowDelay: 30 * seconds, // only abort after ... download duration
+    abortSlowSpeed: 30 * kb, // abort download when speed below ...
+
+    refreshNullStatus: true, // hoster problems, download limit, no connection, ...
+
+    takeGrabbed: true, // move grabbed packages automaticly to dl list
+    takeGrabbedWhen: 30, // move to dl list when remaining count < ...
+    takeGrabbedRandom: true, // move random package to download list (false=move first)
+    takeGrabbedMoveToTop: ["sfv", "txt", "rev"], // this files will be moved to the top inside the package
+    takeGrabbedEnabled: { // automaticly enable/disable file types
+        "txt": false,
+        "rev": true,
+    },
+    takeGrabbedDisableLast: false, // true = will prevent extracting without disabling extraction
+
+});

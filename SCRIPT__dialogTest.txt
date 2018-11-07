@@ -1,0 +1,12 @@
+// Dialog Test
+//
+// Trigger: Interval
+
+require(JD_HOME + "/eventscripter/required/funcs/system.js");
+
+var text = "abc";
+if (confirm("Current text: '"+text+"'\nEdit?")) {
+    text = prompt("Edit text:", text);
+}
+
+

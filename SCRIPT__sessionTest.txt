@@ -1,0 +1,14 @@
+// Session Test
+//
+// Trigger: Interval
+
+require(JD_HOME + "/eventscripter/required/funcs/system.js");
+
+var mysess = local("mysess") || {
+    counter: 1
+};
+
+alert(mysess.counter);
+mysess.counter += 1;
+
+local("mysess", mysess);
