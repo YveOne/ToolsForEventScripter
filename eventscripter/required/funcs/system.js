@@ -22,10 +22,14 @@ function local(k, v) {
     );
 }
 
-function time() {
+function time(asMiliseconds) {
     "use strict";
 
-    return Math.floor(Date.now() / 1000);
+    return (
+        asMiliseconds
+        ? Date.now()
+        : Math.floor(Date.now() / 1000)
+    );
 }
 
 function thread(f, t) {
