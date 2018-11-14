@@ -14,6 +14,7 @@ var minutes = 60 * seconds;
 LinkRefresh({
 
     scriptInterval: 5 * seconds,
+    inactiveTime: 10 * minutes,
 
     minDownloadsRunning: 10, // used to handle simultane running downloads
     maxDownloadsRunning: 15, // used to handle simultane running downloads
