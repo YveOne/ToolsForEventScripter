@@ -113,9 +113,9 @@ var ProxyCleaner = (function () {
     var cfg = {
         scriptInterval: 1 * msMinutes,
         scriptInactiveTime: 10 * msMinutes,
-        proxyBanTime: 30 * msDays,
-        dataSaveDays: 10,
-        needFinishCount: 1
+        proxyBanTime: 10 * msDays,
+        dataSaveDays: 5,
+        needFinishCount: 2
     };
 
     var dataJSON = JD_HOME + "/eventscripter/ProxyCleaner/data.json";
