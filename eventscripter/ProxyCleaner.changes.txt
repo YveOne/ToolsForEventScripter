@@ -1,0 +1,9 @@
+
+1.0
+- Released
+
+1.1
+- Script is now using temporary data for current day logs
+- Fixed some misbehaviours with miliseconds/seconds
+- Script is now using seconds instead of miliseconds
+- List data will get cleaned from now on when banning a proxy

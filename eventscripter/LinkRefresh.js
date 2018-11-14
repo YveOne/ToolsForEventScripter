@@ -1,7 +1,7 @@
 /**
  * @file LinkRefresh Class for JD2's EventScripter
  * @author Yvonne P. <contact@yveone.com>
- * @version 1.0
+ * @version 1.1
  */
 
 /*jslint browser, long, for */
@@ -45,6 +45,7 @@ var LinkRefresh = (function () {
     var cfg = {
 
         scriptInterval: 1 * seconds,
+        inactiveTime: 10 * minutes,
 
         minDownloadsRunning: 10,
         maxDownloadsRunning: 20,
@@ -82,14 +83,38 @@ var LinkRefresh = (function () {
             "rev": false
         },
         takeGrabbedDisableLast: false
-
     };
 
     var session = local("session") || {
         curSimultane: 0,
         skippedTimes: {},
-        resumeCounts: {}
+        resumeCounts: {},
+        inactive: {
+            grabber: 0
+        }
     };
+
+    function packetIsEnabled(p) {
+        var packetLinks = p.getDownloadLinks();
+        var packetLinksCount = packetLinks.length;
+        var i;
+        for (i = 0; i < packetLinksCount; i += 1) {
+            if (!packetLinks[i].isEnabled()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function getEnabledCrawledPackages() {
+        var ret = [];
+        getAllCrawledPackages().forEach(function (p) {
+            if (packetIsEnabled(p)) {
+                ret.push(p);
+            }
+        });
+        return ret;
+    }
 
     function handleSimultaneDownloads() {
         var averageSpeed = getAverageSpeed();
@@ -105,7 +130,7 @@ var LinkRefresh = (function () {
     }
 
     function takeGrabbed() {
-        var crawledPackages = getAllCrawledPackages();
+        var crawledPackages = getEnabledCrawledPackages();
         if (crawledPackages.length) {
             var packet = (
                 cfg.takeGrabbedRandom
@@ -147,7 +172,9 @@ var LinkRefresh = (function () {
             }
 
             callAPI.movePackageToDownloadlist(packet.getUUID());
+            return true;
         }
+        return false;
     }
 
     return function (overwriteCfg) {
@@ -166,6 +193,7 @@ var LinkRefresh = (function () {
         var stopMarkedLink = callAPI.getStopMarkedLink();
         var skippedTimes = {};
         var averageSpeed = getAverageSpeed();
+        var dateNow = Date.now();
 
         function handleLink(link) {
 
@@ -252,8 +280,10 @@ var LinkRefresh = (function () {
         }
 
         // move crawled packages
-        if (cfg.takeGrabbed && allCountReal <= cfg.takeGrabbedWhen) {
-            takeGrabbed();
+        if (cfg.takeGrabbed && allCountReal <= cfg.takeGrabbedWhen && session.inactive.grabber < dateNow) {
+            if (!takeGrabbed()) {
+                session.inactive.grabber = dateNow + cfg.inactiveTime;
+            }
         }
 
         session.skippedTimes = skippedTimes;

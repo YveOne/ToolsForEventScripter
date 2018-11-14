@@ -1,7 +1,7 @@
 /**
  * @file ProxyCleaner Class for JD2's EventScripter
  * @author Yvonne P. <contact@yveone.com>
- * @version 1.0
+ * @version 1.1
  */
 
 /*jslint browser, long, for, this, multivar */
@@ -101,15 +101,19 @@ var ProxyCleaner = (function () {
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
     // CFG
 
-    var seconds = 1000; //ms
-    var minutes = 60 * seconds;
-    var hours = 60 * minutes;
-    var days = 24 * hours;
+    var msSeconds = 1000; //ms
+    var msMinutes = 60 * msSeconds;
+    var msHours = 60 * msMinutes;
+    var msDays = 24 * msHours;
+
+    var sMinutes = 60;
+    var sHours = 60 * sMinutes;
+    var sDays = 24 * sHours;
 
     var cfg = {
-        scriptInterval: 1 * minutes,
-        scriptInactiveTime: 10 * minutes,
-        proxyBanTime: 30 * days,
+        scriptInterval: 1 * msMinutes,
+        scriptInactiveTime: 10 * msMinutes,
+        proxyBanTime: 30 * msDays,
         dataSaveDays: 10,
         needFinishCount: 1
     };
@@ -144,7 +148,7 @@ var ProxyCleaner = (function () {
             inactiveTill: 0
         };
 
-        if (session.inactiveTill >= time()) {
+        if (session.inactiveTill >= Date.now()) {
             return;
         }
 
@@ -194,28 +198,59 @@ var ProxyCleaner = (function () {
         // { "address": finished: [ {time:..., count... } ] }
         var allProxies = proxiesFile.data;
 
-        var nowTimestamp = time();
-        var logdayTimestamp = parseInt(nextLogTimestamp / days) * days;
+        var dateNow = parseInt(Date.now() / 1000);
+        var dateNowDay = parseInt(dateNow / sDays) * sDays;
+        var dateLogDay = parseInt(nextLogTimestamp / msDays) * sDays;
 
         Object.keys(loggedProxies).forEach(function (proxAddr) {
+            var loggedProxy = loggedProxies[proxAddr];
             var proxData = allProxies[proxAddr] || {
                 bannedTill: 0,
                 bannedCount: 0,
+                finishedTemp: null,
                 finishedList: [],
                 finishedCount: 0
             };
-            var loggedProxy = loggedProxies[proxAddr];
-            if (loggedProxy.FINISHED === undefined || !proxData.finishedList.some(function (finishData) {
-                if (finishData.time === logdayTimestamp) {
-                    finishData.count += loggedProxy.FINISHED;
-                    return true;
+
+            if (!proxData.bannedTill) { // not banned
+
+                if (!proxData.finishedTemp) {
+                    proxData.finishedTemp = {
+                        time: dateNowDay,
+                        count: 0
+                    };
+                } else {
+                    // ready to move temp data to list
+                    if (proxData.finishedTemp.time < dateNowDay) {
+                        proxData.finishedList.push(proxData.finishedTemp);
+                        proxData.finishedTemp = {
+                            time: dateNowDay,
+                            count: 0
+                        };
+                    }
                 }
-                return false;
-            })) {
-                proxData.finishedList.push({
-                    time: logdayTimestamp,
-                    count: loggedProxy.FINISHED || 0
-                });
+
+                var addCount = loggedProxy.FINISHED || 0;
+                if (dateLogDay === dateNowDay) {
+                    proxData.finishedTemp.count += addCount;
+                } else {
+                    if (loggedProxy.FINISHED === undefined || !proxData.finishedList.some(function (finishData) {
+                        if (finishData.time === dateLogDay) {
+                            finishData.count += addCount;
+                            return true;
+                        }
+                        return false;
+                    })) {
+                        proxData.finishedList.push({
+                            time: dateLogDay,
+                            count: addCount
+                        });
+                    }
+                }
+
+                if (proxData.finishedList.length > cfg.dataSaveDays) {
+                    proxData.finishedList.splice(0, proxData.finishedList.length - cfg.dataSaveDays);
+                }
             }
             allProxies[proxAddr] = proxData;
         });
@@ -223,11 +258,7 @@ var ProxyCleaner = (function () {
         Object.keys(allProxies).forEach(function (proxAddr) {
             var proxData = allProxies[proxAddr];
 
-            if (proxData.finishedList.length > cfg.dataSaveDays) {
-                proxData.finishedList.splice(0, proxData.finishedList.length - cfg.dataSaveDays);
-            }
-
-            if (proxData.bannedTill && proxData.bannedTill < nowTimestamp) {
+            if (proxData.bannedTill && proxData.bannedTill < dateNow) {
                 proxData.bannedTill = 0;
                 proxData.finishedList = [];
                 proxData.finishedCount = 0;
@@ -241,8 +272,13 @@ var ProxyCleaner = (function () {
             if (!proxData.bannedTill) { // not banned
                 if (proxData.finishedList.length === cfg.dataSaveDays) { // ban able
                     if (proxData.finishedCount < cfg.needFinishCount) { // poor proxy
+
                         proxData.bannedCount += 1;
-                        proxData.bannedTill = nowTimestamp + (cfg.proxyBanTime * proxData.bannedCount);
+                        proxData.bannedTill = dateNow + (cfg.proxyBanTime * proxData.bannedCount);
+                        proxData.finishedList = [];
+                        proxData.finishedCount = 0;
+                        proxData.finishedTemp = null;
+
                     } else { // good proxy ? ...
                         proxData.bannedCount = 0; // ... lets reset ban count
                     }
@@ -254,7 +290,7 @@ var ProxyCleaner = (function () {
         overwriteFile(proxiesJS, "var proxies = " + JSON.stringify(proxiesFile.data, undefined, 4) + ";");
 
         if (nextLogTimestamp === lastLogTimestamp) {
-            session.inactiveTill = time() + cfg.scriptInactiveTime;
+            session.inactiveTill = Date.now() + cfg.scriptInactiveTime;
             local("session", session);
         }
 

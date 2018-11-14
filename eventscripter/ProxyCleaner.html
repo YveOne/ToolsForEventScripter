@@ -1,4 +1,4 @@
-<html>
+-<html>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -260,7 +260,7 @@ OBJ.proxiesToAdd.value = JSON.stringify(newList, undefined, 4);
         OBJ.proxiesToAdd.value.split("\n").forEach(function(addr){
             addr = addr.trim().toLowerCase();
             if (addr) {
-                if (proxies[addr] && proxies[addr].bannedTill) {
+                if (proxies[addr] && !!proxies[addr].bannedTill) {
                     banned1.push(addr);
                 } else {
                     gooood.push(addr);
@@ -270,7 +270,7 @@ OBJ.proxiesToAdd.value = JSON.stringify(newList, undefined, 4);
 
         if (OBJ.includeProxies.checked) {
             Object.keys(proxies).forEach(function(addr){
-                if (proxies[addr].bannedTill) {
+                if (!!proxies[addr].bannedTill) {
                     if (banned1.indexOf(addr) === -1) {
                         banned2.push(addr);
                     }
