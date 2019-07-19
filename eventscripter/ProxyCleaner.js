@@ -1,7 +1,7 @@
 /**
  * @file ProxyCleaner Class for JD2's EventScripter
  * @author Yvonne P. <contact@yveone.com>
- * @version 1.2
+ * @version 1.2.1
  */
 
 /*jslint browser, long, for, this, multivar */
@@ -123,12 +123,8 @@ var ProxyCleaner = (function () {
     var proxiesJSON = JD_HOME + "/eventscripter/ProxyCleaner/proxies.json";
     var proxiesJS = JD_HOME + "/eventscripter/ProxyCleaner/proxies.js";
 
-    var dataFile = new JSONFile(dataJSON, {
-        lastLogTimestamp: 0
-    });
-
-    var proxiesFile = new JSONFile(proxiesJSON, {
-    });
+    var dataFile = new JSONFile(dataJSON, { lastLogTimestamp: 0 });
+    var proxiesFile = new JSONFile(proxiesJSON, {});
 
     // CFG
     //////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -202,8 +198,8 @@ var ProxyCleaner = (function () {
 
         // logfiles are saved with miliseconds
         var dateNow = time(false);
-        var dateNowDay = parseInt(dateNow / sDays) * msDays;
-        var dateLogDay = parseInt(nextLogTimestamp / sDays) * msDays;
+        var dateNowDay = parseInt(dateNow / sDays) * sDays;
+        var dateLogDay = parseInt(nextLogTimestamp / sDays) * sDays;
 
         // unban
         Object.keys(allProxies).forEach(function (proxAddr) {
@@ -280,7 +276,7 @@ var ProxyCleaner = (function () {
 
                 if (proxData.finishedList.length >= cfg.dataSaveDays) { // days reached
                     if (proxData.finishedCount >= cfg.needFinishCount) { // good proxy
-                        proxData.bannedCount -= 1; // ... lets reset ban count
+                        proxData.bannedCount = Math.max(0, proxData.bannedCount - 1); // ... lets reset ban count
                     } else { // poor proxy
                         proxData.bannedCount += 1;
                         proxData.bannedTill = dateNow + Math.floor((cfg.proxyBanTime * proxData.bannedCount) / msSeconds);
